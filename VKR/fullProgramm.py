@@ -34,12 +34,11 @@ columns = ['Возраст', 'Пол', 'Степень стеноза внутр
            'вид КЭЭ', 'ВПШ', 'летальность', 'Осложнения', 'Тип вмешательства']
 df = pd.concat([df_kee[columns], df_kas[columns]], ignore_index=True)
 
+# Удаляем постфактум признаки
 X = df.drop(columns=['Тип вмешательства', 'летальность', 'Осложнения'])
 y = df['Тип вмешательства']
 
-
-
-# === Преобразование признаков ===
+# Преобразование признаков
 categorical_features = X.select_dtypes(include='object').columns.tolist()
 numeric_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
 for col in categorical_features:
@@ -49,16 +48,14 @@ preprocessor = ColumnTransformer([
     ('num', StandardScaler(), numeric_features),
     ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_features)
 ])
-
 X_processed = preprocessor.fit_transform(X)
 
-# === Кодирование целевой переменной ===
 label_encoder = LabelEncoder()
 y_encoded = tf.keras.utils.to_categorical(label_encoder.fit_transform(y))
 
 X_train, X_test, y_train, y_test = train_test_split(X_processed, y_encoded, test_size=0.2, random_state=42)
 
-# === Обучение модели ===
+# Модель
 model = Sequential([
     Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
     Dropout(0.3),
@@ -67,10 +64,9 @@ model = Sequential([
     Dense(2, activation='softmax')
 ])
 model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-
 history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_split=0.2)
 
-# === Визуализация ===
+# Графики
 plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
 plt.plot(history.history['accuracy'], label='Обучение')
@@ -79,7 +75,6 @@ plt.title('Точность')
 plt.xlabel('Эпоха')
 plt.ylabel('Значение')
 plt.legend()
-
 plt.subplot(1, 2, 2)
 plt.plot(history.history['loss'], label='Обучение')
 plt.plot(history.history['val_loss'], label='Валидация')
@@ -87,16 +82,15 @@ plt.title('Потери')
 plt.xlabel('Эпоха')
 plt.ylabel('Значение')
 plt.legend()
-
 plt.tight_layout()
 plt.show()
 
+# GUI
 def launch_gui():
     root = tk.Tk()
     root.title("Рекомендация типа вмешательства")
     root.configure(bg='white')
-    root.geometry("550x750")
-
+    root.geometry("600x850")
     entries = {}
 
     input_columns = [col for col in X.columns if col not in ['летальность', 'Осложнения']]
@@ -114,41 +108,65 @@ def launch_gui():
         'ВПШ': ['0', '1', 'отсутствует']
     }
 
-    # Заголовок
-    title_label = tk.Label(root, text="Введите данные пациента", font=("Arial", 16, "bold"), bg='white')
-    title_label.pack(pady=(15, 10))
+    def stenosis_category(percent):
+        percent = float(percent)
+        if percent == 100:
+            return '13'
+        elif 90 <= percent <= 99:
+            return '12'
+        elif 80 <= percent <= 99:
+            return '11'
+        elif 80 <= percent <= 89:
+            return '10'
+        elif 70 <= percent <= 89:
+            return '9'
+        elif 70 <= percent <= 80:
+            return '8'
+        elif 65 <= percent <= 70:
+            return '7'
+        elif 60 <= percent <= 89:
+            return '6'
+        elif 60 <= percent <= 79:
+            return '5'
+        elif 50 <= percent <= 69:
+            return '4'
+        elif 50 <= percent <= 59:
+            return '3'
+        elif 0 <= percent <= 69:
+            return '2'
+        else:
+            return '1'
 
-    # Сетка с полями
+    tk.Label(root, text="Введите данные пациента", font=("Arial", 16, "bold"), bg='white').pack(pady=(15, 10))
     form_frame = tk.Frame(root, bg='white')
     form_frame.pack(pady=10)
 
     for i, col in enumerate(input_columns):
-        label = tk.Label(form_frame, text=col + ":", font=("Arial", 11), bg='white', anchor='w', width=35)
-        label.grid(row=i, column=0, sticky='w', padx=5, pady=4)
-
-        if col in predefined_values:
+        tk.Label(form_frame, text=col + ":", font=("Arial", 11), bg='white', anchor='w', width=35).grid(row=i, column=0, sticky='w', padx=5, pady=4)
+        if col == 'Степень стеноза внутренней сонной артерии':
+            entry = tk.Entry(form_frame, width=18)
+            entry.grid(row=i, column=1, padx=5)
+            entries[col] = entry
+        elif col in predefined_values:
             var = tk.StringVar(value=predefined_values[col][0])
-            menu = tk.OptionMenu(form_frame, var, *predefined_values[col])
-            menu.config(width=15)
-            menu.grid(row=i, column=1, padx=5)
+            tk.OptionMenu(form_frame, var, *predefined_values[col]).grid(row=i, column=1, padx=5)
             entries[col] = var
         else:
             entry = tk.Entry(form_frame, width=18)
             entry.grid(row=i, column=1, padx=5)
             entries[col] = entry
 
-    # Результат
     result_label = tk.Label(root, text="Результат появится здесь", font=("Arial", 14), fg="#0033cc", bg='white')
     result_label.pack(pady=20)
 
-    # Кнопка
     def predict():
         try:
             input_data = {}
             for col in input_columns:
-                widget = entries[col]
-                val = widget.get()
-                if col in numeric_features:
+                val = entries[col].get()
+                if col == 'Степень стеноза внутренней сонной артерии':
+                    val = stenosis_category(val)
+                if col in numeric_features and col != 'Степень стеноза внутренней сонной артерии':
                     val = float(val)
                 input_data[col] = [val]
 
@@ -165,10 +183,7 @@ def launch_gui():
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
-    button = tk.Button(root, text="Предсказать", command=predict,
-                       font=("Arial", 12, "bold"), bg="#a8f0a5", width=20, height=2)
-    button.pack(pady=10)
-
+    tk.Button(root, text="Предсказать", command=predict, font=("Arial", 12, "bold"), bg="#a8f0a5", width=20, height=2).pack(pady=10)
     root.mainloop()
 
 launch_gui()
