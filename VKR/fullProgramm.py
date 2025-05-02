@@ -34,8 +34,10 @@ columns = ['Возраст', 'Пол', 'Степень стеноза внутр
            'вид КЭЭ', 'ВПШ', 'летальность', 'Осложнения', 'Тип вмешательства']
 df = pd.concat([df_kee[columns], df_kas[columns]], ignore_index=True)
 
-X = df.drop(columns=['Тип вмешательства'])
+X = df.drop(columns=['Тип вмешательства', 'летальность', 'Осложнения'])
 y = df['Тип вмешательства']
+
+
 
 # === Преобразование признаков ===
 categorical_features = X.select_dtypes(include='object').columns.tolist()
