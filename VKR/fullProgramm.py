@@ -91,11 +91,12 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-# === GUI ===
 def launch_gui():
     root = tk.Tk()
     root.title("Рекомендация типа вмешательства")
-    root.geometry("600x850")
+    root.configure(bg='white')
+    root.geometry("550x750")
+
     entries = {}
 
     input_columns = [col for col in X.columns if col not in ['летальность', 'Осложнения']]
@@ -113,24 +114,34 @@ def launch_gui():
         'ВПШ': ['0', '1', 'отсутствует']
     }
 
-    for col in input_columns:
-        frame = tk.Frame(root)
-        frame.pack(pady=5)
-        label = tk.Label(frame, text=col + ":", width=30, anchor='w')
-        label.pack(side='left')
+    # Заголовок
+    title_label = tk.Label(root, text="Введите данные пациента", font=("Arial", 16, "bold"), bg='white')
+    title_label.pack(pady=(15, 10))
+
+    # Сетка с полями
+    form_frame = tk.Frame(root, bg='white')
+    form_frame.pack(pady=10)
+
+    for i, col in enumerate(input_columns):
+        label = tk.Label(form_frame, text=col + ":", font=("Arial", 11), bg='white', anchor='w', width=35)
+        label.grid(row=i, column=0, sticky='w', padx=5, pady=4)
+
         if col in predefined_values:
             var = tk.StringVar(value=predefined_values[col][0])
-            menu = tk.OptionMenu(frame, var, *predefined_values[col])
-            menu.pack(side='right')
+            menu = tk.OptionMenu(form_frame, var, *predefined_values[col])
+            menu.config(width=15)
+            menu.grid(row=i, column=1, padx=5)
             entries[col] = var
         else:
-            entry = tk.Entry(frame, width=20)
-            entry.pack(side='right')
+            entry = tk.Entry(form_frame, width=18)
+            entry.grid(row=i, column=1, padx=5)
             entries[col] = entry
 
-    result_label = tk.Label(root, text="Результат появится здесь", font=("Arial", 14), fg="blue")
+    # Результат
+    result_label = tk.Label(root, text="Результат появится здесь", font=("Arial", 14), fg="#0033cc", bg='white')
     result_label.pack(pady=20)
 
+    # Кнопка
     def predict():
         try:
             input_data = {}
@@ -150,11 +161,14 @@ def launch_gui():
             prediction = model.predict(transformed)
             predicted_class = prediction.argmax(axis=1)[0]
             result = label_encoder.inverse_transform([predicted_class])[0]
-            result_label.config(text=f"Рекомендуется вмешательство: {result}")
+            result_label.config(text=f"Рекомендуется вмешательство: {result}", fg="#007f00")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
-    tk.Button(root, text="Предсказать", command=predict, font=("Arial", 12), bg="lightgreen").pack(pady=10)
+    button = tk.Button(root, text="Предсказать", command=predict,
+                       font=("Arial", 12, "bold"), bg="#a8f0a5", width=20, height=2)
+    button.pack(pady=10)
+
     root.mainloop()
 
 launch_gui()
