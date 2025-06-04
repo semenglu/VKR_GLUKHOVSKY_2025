@@ -115,5 +115,8 @@ def plot_confusion_matrix(cm, classes):
 cm = confusion_matrix(y_true, y_pred)
 plot_confusion_matrix(cm, label_encoder.classes_)
 
+from database import init_db
+init_db()
+
 # === 7. Запуск GUI
 launch_gui(preprocessor, model, label_encoder, numeric_features, categorical_features)

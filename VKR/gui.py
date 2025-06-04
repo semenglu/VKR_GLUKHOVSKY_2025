@@ -3,7 +3,15 @@ from tkinter import messagebox
 import pandas as pd
 from utils import stenosis_category
 
+from database import save_to_db
+import sqlite3
+import tkinter.ttk as ttk
+
+
 def launch_gui(preprocessor, model, label_encoder, numeric_features, categorical_features):
+    last_input = {}
+    last_prediction = None
+
     root = tk.Tk()
     root.title("Рекомендация типа вмешательства")
     root.configure(bg='white')
@@ -22,7 +30,7 @@ def launch_gui(preprocessor, model, label_encoder, numeric_features, categorical
         'ХСН': ['0', '1'],
         'ОНМК в анамнезе': ['0', '1', '2'],
         'ФК по NYHA': ['1', '2', '3', '4'],
-        'Стенокардия ФК': ['0', '1', '2', '3','4'],
+        'Стенокардия ФК': ['0', '1', '2', '3', '4'],
         'Нарушения ритма': ['0', '1'],
         'вид КЭЭ': ['отсутствует', '6', '11', '15', '16', '23'],
         'ВПШ': ['0', '1', 'отсутствует']
@@ -46,6 +54,8 @@ def launch_gui(preprocessor, model, label_encoder, numeric_features, categorical
             prediction = model.predict(transformed)
             predicted_class = prediction.argmax(axis=1)[0]
             result = label_encoder.inverse_transform([predicted_class])[0]
+            last_prediction = result
+            last_input = input_data
             result_label.config(text=f"Рекомендуется вмешательство: {result}", fg="#007f00")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
@@ -55,7 +65,9 @@ def launch_gui(preprocessor, model, label_encoder, numeric_features, categorical
     form_frame.pack(pady=10)
 
     for i, col in enumerate(input_columns):
-        tk.Label(form_frame, text=col + ":", font=("Arial", 11), bg='white', anchor='w', width=35).grid(row=i, column=0, sticky='w', padx=5, pady=4)
+        tk.Label(form_frame, text=col + ":", font=("Arial", 11), bg='white', anchor='w', width=35).grid(row=i, column=0,
+                                                                                                        sticky='w',
+                                                                                                        padx=5, pady=4)
         if col == 'Степень стеноза внутренней сонной артерии':
             entry = tk.Entry(form_frame, width=18)
             entry.grid(row=i, column=1, padx=5)
@@ -71,5 +83,43 @@ def launch_gui(preprocessor, model, label_encoder, numeric_features, categorical
 
     result_label = tk.Label(root, text="Результат появится здесь", font=("Arial", 14), fg="#0033cc", bg='white')
     result_label.pack(pady=20)
-    tk.Button(root, text="Предсказать", command=predict, font=("Arial", 12, "bold"), bg="#a8f0a5", width=20, height=2).pack(pady=10)
+
+    def save_result():
+        if not last_input or not last_prediction:
+            messagebox.showwarning("Внимание", "Сначала выполните предсказание")
+            return
+        save_to_db(last_input, last_prediction)
+        messagebox.showinfo("Успешно", "Данные сохранены в базу")
+
+    def show_records():
+        window = tk.Toplevel(root)
+        window.title("Сохраненные предсказания")
+        window.geometry("1200x400")
+        tree = ttk.Treeview(window)
+
+        conn = sqlite3.connect('interventions.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM predictions")
+        rows = cursor.fetchall()
+        conn.close()
+
+        columns = [
+            'ID', 'Возраст', 'Пол', 'Стеноз', 'Стенокардия', 'ПИМ', 'Ритм', 'ХСН',
+            'NYHA', 'СД', 'ХОБЛ', 'ОНМК', 'вид КЭЭ', 'ВПШ', 'Тип вмешательства'
+        ]
+        tree['columns'] = columns
+        tree['show'] = 'headings'
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor='center')
+        for row in rows:
+            tree.insert("", "end", values=row)
+        tree.pack(expand=True, fill='both')
+
+    tk.Button(root, text="Предсказать", command=predict, font=("Arial", 12, "bold"), bg="#a8f0a5", width=20,
+              height=2).pack(pady=10)
     root.mainloop()
+
+    tk.Button(root, text="Сохранить в БД", command=save_result, font=("Arial", 10), bg="#f0e68c", width=20).pack(pady=5)
+    tk.Button(root, text="Показать сохраненные", command=show_records, font=("Arial", 10), bg="#add8e6", width=20).pack(
+        pady=5)
