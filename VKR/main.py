@@ -46,19 +46,8 @@ class_weights = compute_class_weight(
 class_weight_dict = dict(zip(np.unique(y_labels), class_weights))
 
 #Построение улучшенной модели
-model = Sequential([
-    Dense(128, activation='relu', input_shape=(X_train.shape[1],), kernel_regularizer=regularizers.l2(0.001)),
-    BatchNormalization(),
-    Dropout(0.5),
-    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    BatchNormalization(),
-    Dropout(0.3),
-    Dense(32, activation='relu'),
-    Dense(2, activation='softmax')
-])
-model.compile(optimizer=Adam(learning_rate=0.0005),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+from model import build_model
+model = build_model(X_train.shape[1])
 
 # Обучение модели с EarlyStopping
 early_stop = EarlyStopping(monitor='val_loss', patience=8, restore_best_weights=True)
