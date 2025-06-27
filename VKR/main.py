@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-# === 1. Загрузка и подготовка данных
+#Загрузка и подготовка данных
 df = load_data('kur5.KEE.csv', 'kur6.KAS.csv')
 X = df.drop(columns=['Тип вмешательства', 'летальность', 'Осложнения', 'вид КЭЭ', 'ВПШ'])
 y = df['Тип вмешательства']
@@ -37,7 +37,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X_processed, y_encoded, test_size=0.2, random_state=42
 )
 
-# === 2. Вычисление весов классов
+#Вычисление весов классов
 class_weights = compute_class_weight(
     class_weight='balanced',
     classes=np.unique(y_labels),
@@ -45,7 +45,7 @@ class_weights = compute_class_weight(
 )
 class_weight_dict = dict(zip(np.unique(y_labels), class_weights))
 
-# === 3. Построение улучшенной модели
+#Построение улучшенной модели
 model = Sequential([
     Dense(128, activation='relu', input_shape=(X_train.shape[1],), kernel_regularizer=regularizers.l2(0.001)),
     BatchNormalization(),
@@ -60,7 +60,7 @@ model.compile(optimizer=Adam(learning_rate=0.0005),
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-# === 4. Обучение модели с EarlyStopping
+# Обучение модели с EarlyStopping
 early_stop = EarlyStopping(monitor='val_loss', patience=8, restore_best_weights=True)
 history = model.fit(
     X_train, y_train,
@@ -71,7 +71,7 @@ history = model.fit(
     callbacks=[early_stop]
 )
 
-# === 5. Оценка модели
+# Оценка модели
 y_pred_probs = model.predict(X_test)
 y_pred = y_pred_probs.argmax(axis=1)
 y_true = y_test.argmax(axis=1)
@@ -81,7 +81,7 @@ print(classification_report(y_true, y_pred, target_names=label_encoder.classes_)
 print("=== Confusion Matrix ===")
 print(confusion_matrix(y_true, y_pred))
 
-# === 6. Визуализация обучения и матрицы ошибок
+# Визуализация обучения и матрицы ошибок
 plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
 plt.plot(history.history['accuracy'], label='Обучение')
@@ -102,7 +102,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
-# === Матрица ошибок
+# Матрица ошибок
 def plot_confusion_matrix(cm, classes):
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=classes, yticklabels=classes)
@@ -118,5 +118,5 @@ plot_confusion_matrix(cm, label_encoder.classes_)
 from database import init_db
 init_db()
 
-# === 7. Запуск GUI
+# Запуск GUI
 launch_gui(preprocessor, model, label_encoder, numeric_features, categorical_features)
