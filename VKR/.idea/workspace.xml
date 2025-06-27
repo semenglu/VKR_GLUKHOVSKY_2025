@@ -3,7 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="5cf294ed-e75a-476d-87ee-554d1d0478da" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KAS.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KEE.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/interventions.db" beforeDir="false" afterPath="$PROJECT_DIR$/interventions.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,8 +173,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.database" />
         <item itemvalue="Python.fullProgramm" />
+        <item itemvalue="Python.database" />
         <item itemvalue="Python.KAS" />
         <item itemvalue="Python.KEE (1)" />
       </list>
